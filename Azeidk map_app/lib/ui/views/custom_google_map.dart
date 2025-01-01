@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:map_app/models/place_model.dart';
+import '../../utils/location_service.dart';
 
 class CustomGoogleMap extends StatefulWidget {
   const CustomGoogleMap({super.key});
@@ -15,35 +16,28 @@ class CustomGoogleMap extends StatefulWidget {
 class _CustomGoogleMapState extends State<CustomGoogleMap> {
   late CameraPosition initialCameraPosition;
   late Location location;
-
+  late LocationService locationService;
   @override
   void initState() {
     initialCameraPosition = CameraPosition(
-      zoom: 12,
+      zoom: 1,
       target: LatLng(
         21.582224110306452,
         39.207531034350446,
       ),
     );
-    initMarker();
-    initPolyLine();
-    initPolygon();
-    initCircle();
-    location = Location();
-    chackAndRequestLocationService();
+
+    locationService = LocationService();
+    updateMyLocation();
     super.initState();
   }
 
-  late GoogleMapController googleMapController;
+  bool isFirstCall = true;
+  GoogleMapController? googleMapController;
   Set<Marker> markers = {};
   Set<Polyline> polyLines = {};
   Set<Polygon> polygons = {};
   Set<Circle> circle = {};
-  @override
-  void dispose() {
-    googleMapController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,20 +60,20 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
               //   ),
               // ),
               initialCameraPosition: initialCameraPosition),
-          Positioned(
-              bottom: 12,
-              left: 22,
-              right: 22,
-              child: ElevatedButton(
-                onPressed: () {
-                  googleMapController.animateCamera(
-                    CameraUpdate.newLatLng(
-                      LatLng(21.42389822075623, 39.82664447807192),
-                    ),
-                  );
-                },
-                child: Text('Change Location'),
-              )),
+          // Positioned(
+          //     bottom: 12,
+          //     left: 22,
+          //     right: 22,
+          //     child: ElevatedButton(
+          //       onPressed: () {
+          //         googleMapController!.animateCamera(
+          //           CameraUpdate.newLatLng(
+          //             LatLng(21.42389822075623, 39.82664447807192),
+          //           ),
+          //         );
+          //       },
+          //       child: Text('Change Location'),
+          //     )),
         ],
       ),
     );
@@ -88,7 +82,7 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
   void initMapStyle() async {
     var mapStyle = await DefaultAssetBundle.of(context)
         .loadString('assets/map_styles/map_styles.json');
-    googleMapController.setMapStyle(mapStyle);
+    googleMapController!.setMapStyle(mapStyle);
   }
 
   Future<Uint8List> getImgaeFromData(String image, double width) async {
@@ -194,40 +188,53 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     circle.add(elsafaBlaza);
   }
 
-  void chackAndRequestLocationService() async {
-    var isServiceEnable = await location.serviceEnabled();
-    if (!isServiceEnable) {
-      isServiceEnable = await location.requestService();
-      if (!isServiceEnable) {
-        throw Exception('lol');
-      }
-    }
-    chackAndRequestLocationPermission();
+  void updateMyLocation() async {
+    await locationService.checkAndRequestLocationService();
+    bool hasPermision =
+        await locationService.checkAndRequestLocationPermission();
+    if (hasPermision) {
+      locationService.getRealTimeLocationData((locationData) {
+        setMyLocationMarker(locationData);
+        setMyCameraPosition(locationData);
+      });
+    } else {}
   }
 
-  void chackAndRequestLocationPermission() async {
-    var permissoinStatus = await location.hasPermission();
-    if (permissoinStatus == PermissionStatus.denied) {
-      permissoinStatus = await location.requestPermission();
-      if (permissoinStatus != PermissionStatus.granted) {
-        //TODO:
-      }
+  void setMyCameraPosition(LocationData locationData) {
+    if (isFirstCall) {
+      CameraPosition cameraPosition = CameraPosition(
+        target: LatLng(locationData.latitude!, locationData.longitude!),
+        zoom: 17,
+      );
+      googleMapController?.animateCamera(
+        CameraUpdate.newCameraPosition(cameraPosition),
+      );
+      isFirstCall = false;
+    } else {
+      googleMapController?.animateCamera(CameraUpdate.newLatLng(
+        LatLng(locationData.latitude!, locationData.longitude!),
+      ));
     }
+  }
+
+  void setMyLocationMarker(LocationData locationData) {
+    var myLocationMarker = Marker(
+        markerId: MarkerId('My_Location_marker'),
+        position: LatLng(locationData.latitude!, locationData.longitude!));
+    markers.add(myLocationMarker);
+    setState(() {});
   }
 }
 
+ 
+      // this is requests for map app 
+// inquire about location serviece 
+// request permissions from user 
+// get location 
+// desplay location 
 
 // world view 0 -> 3 
 // country view  4 -> 6 
 //city view 9 -> 12
 // street view -> 13 -> 17 
 // building view -> 18 -> 20
-
-
-
-
-      // this is requests for map app 
-// inquire about location serviece 
-// request permissions from user 
-// get location 
-// desplay location 
