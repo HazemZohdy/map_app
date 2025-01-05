@@ -2,17 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:map_app/ui/views/custom_google_map.dart';
 
 void main() {
-  runApp(MapApp());
+  runApp(const RoutTrackerMap());
 }
 
-class MapApp extends StatelessWidget {
-  const MapApp({super.key});
+class RoutTrackerMap extends StatelessWidget {
+  const RoutTrackerMap({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: CustomGoogleMap(),
+      home: GoogleMapView(),
     );
   }
 }
+
+// import 'package:flutter/material.dart';
+// import 'package:map_app/ui/views/custom_google_map.dart';
+
+// void main() {
+//   runApp(MapApp());
+// }
+
+// class MapApp extends StatelessWidget {
+//   const MapApp({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return MaterialApp(
+//       debugShowCheckedModeBanner: false,
+//       home: CustomGoogleMap(),
+//     );
+//   }
+// }

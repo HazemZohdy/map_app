@@ -2,31 +2,47 @@ import 'package:location/location.dart';
 
 class LocationService {
   Location location = Location();
-  Future<bool> checkAndRequestLocationService() async {
+  Future<void> checkAndRequestLocationService() async {
     var isServiceEnable = await location.serviceEnabled();
     if (!isServiceEnable) {
       isServiceEnable = await location.requestService();
       if (!isServiceEnable) {
-        return false;
+        throw LocationServiceException();
       }
     }
-    return true;
   }
 
-  Future<bool> checkAndRequestLocationPermission() async {
+  Future<void> checkAndRequestLocationPermission() async {
     var permissoinStatus = await location.hasPermission();
     if (permissoinStatus == PermissionStatus.deniedForever) {
-      return false;
+      throw LocationPremissionException();
     }
     if (permissoinStatus == PermissionStatus.denied) {
       permissoinStatus = await location.requestPermission();
-      return permissoinStatus == PermissionStatus.granted;
+      if (permissoinStatus != PermissionStatus.granted) {
+        throw LocationPremissionException();
+      }
     }
-
-    return true;
   }
 
-  void getRealTimeLocationData(void Function(LocationData)? onData) {
+  void getRealTimeLocationData(void Function(LocationData)? onData) async {
+    await checkAndRequestLocationService();
+    await checkAndRequestLocationPermission();
     location.onLocationChanged.listen(onData);
   }
+
+  Future<LocationData> getLocation() async {
+    await checkAndRequestLocationService();
+    await checkAndRequestLocationPermission();
+    return await location.getLocation();
+  }
 }
+
+class LocationServiceException implements Exception {}
+
+class LocationPremissionException implements Exception {}
+
+// create textfeild
+// listen to the textfeild
+// search places
+// display results
