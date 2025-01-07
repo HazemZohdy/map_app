@@ -3,8 +3,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:map_app/model/place_autocomplete_model/place_autocomplete_model.dart';
 import 'package:map_app/utils/google_map_places_service.dart';
 import 'package:map_app/utils/location_service.dart';
+import 'package:uuid/uuid.dart';
 
 import '../widgets/cusotm_text_feild.dart';
+import '../widgets/custom_list_view.dart';
 
 class GoogleMapView extends StatefulWidget {
   const GoogleMapView({super.key});
@@ -19,11 +21,13 @@ late CameraPosition initialCameraPostion;
 late LocationService locationService;
 late GoogleMapController googleMapController;
 Set<Marker> markers = {};
-List<PlaceAutocompleteModel> places = [];
+List<PlaceModel> places = [];
+late Uuid uuid;
 
 class _GoogleMapViewState extends State<GoogleMapView> {
   @override
   void initState() {
+    uuid = Uuid();
     googleMapPlacesService = GoogleMapPlacesService();
     textEditingController = TextEditingController();
     initialCameraPostion = CameraPosition(target: LatLng(0, 0));
@@ -35,15 +39,18 @@ class _GoogleMapViewState extends State<GoogleMapView> {
 
   void fetchPrediction() {
     textEditingController.addListener(() async {
+      var sesstionToken = uuid.v4();
       if (textEditingController.text.isNotEmpty) {
         var result = await googleMapPlacesService.getProdiction(
           input: textEditingController.text,
+          sestionTeken: sesstionToken,
         );
         places.clear();
         places.addAll(result);
-        setState(() {
-          
-        });
+        setState(() {});
+      } else {
+        places.clear();
+        setState(() {});
       }
     });
   }
@@ -56,6 +63,7 @@ class _GoogleMapViewState extends State<GoogleMapView> {
 
   @override
   Widget build(BuildContext context) {
+    print(uuid.v4());
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: SafeArea(
@@ -74,11 +82,20 @@ class _GoogleMapViewState extends State<GoogleMapView> {
               right: 12,
               left: 12,
               child: Column(
+                spacing: 12,
                 children: [
                   CustomTextFeild(
                     textEditingController: textEditingController,
                   ),
-                  CustomListView(),
+                  CustomListView(
+                    onSelectPlaces: (placeDetailsModle) {
+                      textEditingController.clear();
+                      places.clear();
+                      setState(() {});
+                    },
+                    places: places,
+                    googleMapPlacesService: googleMapPlacesService,
+                  ),
                 ],
               ),
             ),
@@ -94,7 +111,7 @@ class _GoogleMapViewState extends State<GoogleMapView> {
       LatLng currentPostion =
           LatLng(locationData.latitude!, locationData.longitude!);
       Marker currentPostionMarker = Marker(
-        markerId: MarkerId('muMarker'),
+        markerId: MarkerId('myMarker'),
         position: currentPostion,
       );
 
@@ -111,26 +128,6 @@ class _GoogleMapViewState extends State<GoogleMapView> {
       // TODO
     } on LocationPremissionException catch (e) {
     } catch (e) {}
-  }
-}
-
-class CustomListView extends StatelessWidget {
-  const CustomListView({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      shrinkWrap: true,
-      itemBuilder: (context, index) {
-        return Text(places[index].description!);
-      },
-      separatorBuilder: (context, index) {
-        return Divider();
-      },
-      itemCount: places.length,
-    );
   }
 }
 
