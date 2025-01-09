@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:map_app/models/place_autocomplete_model/place_autocomplete_model.dart';
@@ -18,14 +20,14 @@ late TextEditingController textEditingController;
 late CameraPosition initialCameraPostion;
 late MapServices mapServices;
 late GoogleMapController googleMapController;
-
 Set<Marker> markers = {};
 List<PlaceModel> places = [];
 Set<Polyline> polyLine = {};
 late Uuid uuid;
 String? sesstionToken;
-late LatLng currentPostion;
+ 
 late LatLng destinations;
+Timer? debounce;
 
 class _GoogleMapViewState extends State<GoogleMapView> {
   @override
@@ -34,31 +36,36 @@ class _GoogleMapViewState extends State<GoogleMapView> {
     mapServices = MapServices();
     textEditingController = TextEditingController();
     initialCameraPostion = CameraPosition(
-        target: LatLng(
-      21.557368883761093,
-      39.19959691722625,
-    ));
-
+      target: LatLng(21.557368883761093, 39.19959691722625),
+    );
     updateCurrentLoction();
-
-    super.initState();
     fetchPrediction();
+    super.initState();
   }
 
   void fetchPrediction() {
-    textEditingController.addListener(() async {
-      sesstionToken ??= uuid.v4();
-      await mapServices.getProdiction(
-          input: textEditingController.text,
-          sestionTeken: sesstionToken!,
-          places: places);
-      setState(() {});
+    textEditingController.addListener(() {
+      if (debounce?.isActive ?? false) {
+        debounce?.cancel();
+      }
+      debounce = Timer(
+        Duration(milliseconds: 150),
+        () async {
+          sesstionToken ??= uuid.v4();
+          await mapServices.getProdiction(
+              input: textEditingController.text,
+              sestionTeken: sesstionToken!,
+              places: places);
+          setState(() {});
+        },
+      );
     });
   }
 
   @override
   void dispose() {
     textEditingController.dispose();
+    debounce?.cancel();
     super.dispose();
   }
 
@@ -80,7 +87,7 @@ class _GoogleMapViewState extends State<GoogleMapView> {
               initialCameraPosition: initialCameraPostion,
             ),
             Positioned(
-              top: 16,
+              top: 22,
               right: 12,
               left: 12,
               child: Column(
@@ -99,7 +106,7 @@ class _GoogleMapViewState extends State<GoogleMapView> {
                           placeDetailsModle.geometry!.location!.lat!,
                           placeDetailsModle.geometry!.location!.lng!);
                       var points = await mapServices.getRouteData(
-                        currentPostion: currentPostion,
+                       
                         destinations: destinations,
                       );
                       mapServices.displayRoute(points,
@@ -119,13 +126,18 @@ class _GoogleMapViewState extends State<GoogleMapView> {
     );
   }
 
-  void updateCurrentLoction() async {
+  void updateCurrentLoction()   {
     try {
-      currentPostion = await mapServices.updateCurrentLoction(
+        mapServices.updateCurrentLoction(
+          onUpdateCurrentLocation: (){
+            setState(() {
+              
+            });
+          },
         googleMapController: googleMapController,
         markers: markers,
       );
-      setState(() {});
+     
     } on LocationServiceException catch (e) {
       //
     } on LocationPremissionException catch (e) {
@@ -134,6 +146,10 @@ class _GoogleMapViewState extends State<GoogleMapView> {
       //
     }
   }
+}
+
+
+
 
   // Future<List<LatLng>> getRouteData() async {
   //   LocationInfoModel origin = LocationInfoModel(
@@ -199,7 +215,12 @@ class _GoogleMapViewState extends State<GoogleMapView> {
   //     northeast: LatLng(northEastLatitude, northEastLongtitude),
   //   );
   // }
-}
+
+
+
+
+
+
 
 // import 'dart:ui' as ui;
 // import 'package:flutter/material.dart';
