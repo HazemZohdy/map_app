@@ -1,10 +1,9 @@
 import 'dart:convert';
-
 import 'package:http/http.dart' as http;
-import 'package:map_app/model/place_autocomplete_model/place_autocomplete_model.dart';
-import 'package:map_app/model/place_details_model/place_details_model.dart';
+import 'package:map_app/models/place_autocomplete_model/place_autocomplete_model.dart';
+import 'package:map_app/models/place_details_model/place_details_model.dart';
 
-class GoogleMapPlacesService {
+class PlacesService {
   final String baseUrl = 'https://maps.googleapis.com/maps/api/place';
   final String apiKey = 'AIzaSyCE2jpewMGO4HPAPNZAD6KKXQeSbuOZKxE';
   Future<List<PlaceModel>> getProdiction({

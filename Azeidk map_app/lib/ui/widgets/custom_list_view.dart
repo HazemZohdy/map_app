@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:map_app/model/place_autocomplete_model/place_autocomplete_model.dart';
-import 'package:map_app/model/place_details_model/place_details_model.dart';
+import 'package:map_app/models/place_autocomplete_model/place_autocomplete_model.dart';
+import 'package:map_app/models/place_details_model/place_details_model.dart';
+import 'package:map_app/utils/map_services.dart';
 
-import '../../utils/google_map_places_service.dart';
+ 
 
 class CustomListView extends StatelessWidget {
   const CustomListView({
     super.key,
-    required this.googleMapPlacesService,
+    required this.mapServices,
     required this.places,
     required this.onSelectPlaces,
   });
-  final GoogleMapPlacesService googleMapPlacesService;
+  final MapServices mapServices;
   final List<PlaceModel> places;
   final Function(PlaceDetailsModel) onSelectPlaces;
   @override
@@ -27,8 +28,7 @@ class CustomListView extends StatelessWidget {
             title: Text(places[index].description!),
             trailing: IconButton(
               onPressed: () async {
-                var placeDetails = await googleMapPlacesService.getPlaceDetails(
-                    placeId: places[index].placeId.toString());
+                var placeDetails = await mapServices.getPlaceDetails(placeId: places[index].placeId!);
                 onSelectPlaces(placeDetails);
               },
               icon: Icon(
